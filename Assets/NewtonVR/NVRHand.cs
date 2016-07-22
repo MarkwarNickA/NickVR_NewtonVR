@@ -102,7 +102,20 @@ namespace NewtonVR
             }
 
             SteamVR_Utils.Event.Listen("render_model_loaded", RenderModelLoaded);
+            SteamVR_Utils.Event.Listen("new_poses_applied", OnNewPosesApplied);
         }
+
+        private void OnNewPosesApplied(params object[] args)
+        {
+            if (Controller == null)
+                return;
+
+            if (CurrentlyInteracting != null)
+            {
+                CurrentlyInteracting.OnNewPosesApplied();
+            }
+        }
+
 
         protected virtual void Update()
         {
@@ -653,8 +666,9 @@ namespace NewtonVR
                         break;
                 }
             }
-            else
+            else if (RenderModelInitialized == false)
             {
+                RenderModelInitialized = true;
                 GameObject CustomModelObject = GameObject.Instantiate(CustomModel);
                 Colliders = CustomModelObject.GetComponentsInChildren<Collider>(); //note: these should be trigger colliders
 
@@ -684,8 +698,12 @@ namespace NewtonVR
                 {
                     NVRHelpers.SetTransparent(GhostRenderers[rendererIndex].material, transparentcolor);
                 }
+                
+                if (Colliders != null)
+                {
+                    GhostColliders = Colliders;
+                }
 
-                GhostColliders = Colliders;
                 CurrentVisibility = VisibilityLevel.Ghost;
             }
             else
@@ -699,7 +717,11 @@ namespace NewtonVR
                     NVRHelpers.SetTransparent(GhostRenderers[rendererIndex].material, transparentcolor);
                 }
 
-                GhostColliders = Colliders;
+                if (Colliders != null)
+                {
+                    GhostColliders = Colliders;
+                }
+
                 CurrentVisibility = VisibilityLevel.Ghost;
             }
 
@@ -722,6 +744,12 @@ namespace NewtonVR
             {
                 return this.GetComponentInChildren<SteamVR_RenderModel>().renderModelName;
             }
+        }
+
+        private void OnDestroy()
+        {
+            SteamVR_Utils.Event.Remove("render_model_loaded", RenderModelLoaded);
+            SteamVR_Utils.Event.Remove("new_poses_applied", OnNewPosesApplied);
         }
     }
     
